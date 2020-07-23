@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- Bootstrap CSS -->
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+    <title>SVXLite</title>
+  </head>
+    <body>
+       <div class="container">
+            <h1 class="d-flex justify-content-center m-1">XCOR <span class="badge badge-pill badge-primary d-flex justify-content-center m-1"> Lite</h1>
+        <br>
+        <div class="d-flex justify-content-center">
+            <button class="btn btn-lg btn-primary shadow-sm m-1" onclick="login()">Login</button>
+        </div>
+        <br>
+        <div class="d-flex justify-content-center">
+            <h4 id="status" class="ml-1">...</h4>
+            <br>
+            <br>
+        </div>
+
+        <div class="row row-cols-2">
+            <h6 class='col text-center'>
+                EOS Balance
+                <div id='eos_balance'>...</div>
+            </h6>
+            <h6 class='col text-center'>
+                SVX Balance
+                <div id='svx_balance'>...</div>
+            </h6>
+        </div>
+      
+        <div class="d-flex justify-content-center">
+            <button class="btn btn-success shadow-sm m-2" onclick="buySVXEOS()">SendEOS<br> Buy SVX/EOS</button>
+                <input class="small text-center" id="transfer_amount" type="number" value="1">
+            <button class="btn btn-danger shadow-sm m-2" onclick="sellSVXEOS()">SendSVX<br>Sell SVX/EOS</button>
+        </div>
+        <div>
+        <h6 id="SVXEOSPrice" class="d-flex justify-content-center">...</h6>
+        </div>
+        <br>
+
+         <div class="row row-cols-2">
+            <h6 class='col text-center'>
+                EOS Balance
+                <div id='eos_balance1'>...</div>
+            </h6>
+            <h6 class='col text-center'>
+                LSVX Balance
+                <div id='lsvx_balance'>...</div>
+            </h6>
+        </div>
+
+        <div class="d-flex justify-content-center">
+            <button class="btn btn-success shadow-sm m-2" onclick="buyLSVX()">SendEOS<br>Buy LSVX/EOS</button>
+                <input class="small text-center" id="transfer_amount_LSVX" type="number" value="1">
+            <button class="btn btn-danger shadow-sm m-2" onclick="sellLSVX()">SendLSVX<br>Sell LSVX/EOS</button>
+        </div>  
+         <div>
+        <h6 id="LSVXPrice" class="d-flex justify-content-center">...</h6>
+        </div>
+        <br>
+        <div class="d-flex justify-content-center">
+            <button class="btn btn-success shadow-sm m-2" onclick="buySSVX()">SendSVX<br>Buy SSVX/SVX</button>
+                <input class="small text-center" id="transfer_amount_SSVX" type="number" value="1">
+            <button class="btn btn-danger shadow-sm m-2" onclick="sellSSVX()">SendSSVX<br>Sell SSVX/SVX</button>
+        </div>  
+         <div>
+        <h6 id="SSVXPrice" class="d-flex justify-content-center">...</h6>
+        </div>
+        <br>   
+        <br>
+        <div class="d-flex justify-content-center">
+            <button class="btn btn-lg btn-primary shadow-sm m-1 d-flex justify-content-center" onclick="logout()">Logout</button>
+        </div>
+
+    <script src='assets/scatterjs-core.min.js'></script>
+    <script src='assets/scatterjs-plugin-eosjs2.min.js'></script>
+    <script src='assets/eosjs-api.js'></script>
+    <script src='assets/eosjs-jsonrpc.js'></script>
+
+    <script>
+
+        // Everything that Scatter does on the page
+
+        // Set up ScatterJS.Network
+        ScatterJS.plugins(new ScatterEOS()); 
+
+        const network = ScatterJS.Network.fromJson({
+            blockchain: 'eos',
+            chainId: 'e70aaab8997e1dfce58fbfac80cbbb8fecec7b99cf982a9444273cbc64c41473',
+            host: 'api.jungle.alohaeos.com',
+            port: 443,
+            protocol: 'https'
+        })
+
+
+
+        // Run ScatterJS.Connect
+        ScatterJS.connect('XCORLite', {
+            network
+        }).then(connected => {
+            if (!connected) return console.error('no scatter');
+            ScatterJS.login().then(id => {
+                if (!id) return console.error('no identity');
+
+            });
+        });
+
+        const rpc = new eosjs_jsonrpc.default(network.fullhost());
+        const api = ScatterJS.eos(network, eosjs_api.default, {
+            rpc
+        });
+
+        // Perpetually update that status id
+        const setStatus = () => {
+        const status = document.getElementById('status');
+            if (!ScatterJS) return status.innerText = 'Login to TokenPocket';
+            if (!ScatterJS.identity) return status.innerText = 'Login with Account';
+
+
+            status.innerText = ScatterJS.identity.accounts[0].name;
+            const scatterAccount = ScatterJS.identity.accounts[0].name;
+
+          
+            rpc.get_table_rows({
+            json: true,               
+            code: 'svxsharelays',      
+            scope: 'SVX',   // sov pair for pricing      
+            table: 'pair'           
+   
+      }).then(function(value) {
+      
+        var svxeosPrice = value.rows[0].price;
+            svxeosPrice = parseFloat(svxeosPrice).toFixed(8);
+        var lsvxPrice = value.rows[0].longprice;
+            lsvxPrice = parseFloat(lsvxPrice).toFixed(8);
+        var ssvxPrice = value.rows[0].shortprice;
+            ssvxPrice = parseFloat(ssvxPrice).toFixed(8);
+        SVXEOSPrice.innerText = ("SVX Price = " + svxeosPrice + " EOS");
+        LSVXPrice.innerText = ("LSVX Price = " + lsvxPrice + " EOS");
+        SSVXPrice.innerText = ("SSVX Price = " + ssvxPrice + " SVX");
+        });
+
+      
+      
+      rpc.get_account(scatterAccount).then(function(value){
+        var eosBalance = value.core_liquid_balance;
+        eos_balance.innerText = eosBalance;
+        eos_balance1.innerText = eosBalance;
+
+
+      });
+
+      rpc.get_table_rows({
+        json: true,
+        code: 'svxmintofeos',
+        scope: scatterAccount,
+        table: 'accounts'
+      }).then(function(value){
+        var svxUserBalance = value.rows[0].balance;
+            svxUserBalance = parseFloat(svxUserBalance).toFixed(4);
+
+        var stakeBalance = value.rows[0].storebalance;
+            stakeBalance = parseFloat(stakeBalance).toFixed(4);
+        var svxUserLiquidBalance = svxUserBalance - stakeBalance;
+            svxUserLiquidBalance = parseFloat(svxUserLiquidBalance).toFixed(4);   
+
+        svx_balance.innerText = svxUserLiquidBalance;                            
+
+      });
+
+
+
+
+        };
+
+       
+
+
+        setStatus();
+        setInterval(() => {
+            setStatus();
+        }, 500);
+
+       
+
+        // Set up our RPC + API 
+      
+
+
+
+
+
+
+
+        // actual functions
+        function format_precision4_amount(amount) {
+
+            transfer_amount = amount + "";
+
+            var n = transfer_amount.indexOf(".");
+
+            if (n == -1) {
+                transfer_amount = transfer_amount + ".0000";
+
+                n = transfer_amount.indexOf(".");
+            }
+
+            var l = transfer_amount.length;
+            diff = l - n - 1;
+
+            true_amount = transfer_amount;
+            for (i = diff; i < 4; i++)
+                true_amount += '0';
+
+            true_amount = parseFloat(true_amount).toFixed(4);
+
+            return (true_amount);
+
+        }
+
+        function logout() {
+            ScatterJS.logout();
+        }
+
+        function login(){
+            ScatterJS.login();
+        }
+
+        function buySVXEOS() {
+            ScatterJS.login().then(id => {
+                if (!id) return console.error('no identity');
+                const account = ScatterJS.account('eos');
+                var transfer_amount = document.getElementById('transfer_amount').value;
+                transfer_amount = format_precision4_amount(transfer_amount) + " EOS";
+
+                api.transact({
+                    actions: [{
+                        account: 'eosio.token',
+                        name: 'transfer',
+                        authorization: //user paying for resources must go first
+                            [{
+
+                            actor: account.name,
+                            permission: account.authority,
+
+                        }],
+                        data: {
+                            //todo:pass in data object
+                            from: account.name,
+                            to: 'svxsharelays',
+                            quantity: transfer_amount,
+                            memo: 'SVX'
+                        }
+                    }]
+
+                }, {
+                    blocksBehind: 3,
+                    expireSeconds: 30,
+                }).then(res => {
+                    console.log('sent tx: ', res);
+                    alert('You successfully exchanged ' + transfer_amount + ' for SOV');
+                }).catch(err => {
+                    console.error('error thrown: ', err);
+                    alert(err);
+                });
+            });
+        }
+
+        function sellSVXEOS(){
+            ScatterJS.login().then(id => {
+                if (!id) return console.error('no identity');
+                const account = ScatterJS.account('eos');
+                var transfer_amount = document.getElementById('transfer_amount').value;
+                transfer_amount = format_precision4_amount(transfer_amount) + " SVX";
+
+                api.transact({
+                    actions: [{
+                        account: 'svxmintofeos',
+                        name: 'transfer',
+                        authorization: //user paying for resources must go first
+                            [{
+
+                            actor: account.name,
+                            permission: account.authority,
+
+                        }],
+                        data: {
+                            //todo:pass in data object
+                            from: account.name,
+                            to: 'svxsharelays',
+                            quantity: transfer_amount,
+                            memo: 'EOS'
+                        }
+                    }]
+
+                }, {
+                    blocksBehind: 3,
+                    expireSeconds: 30,
+                }).then(res => {
+                    console.log('sent tx: ', res);
+                    alert('You successfully exchanged ' + transfer_amount + ' for EOS');
+                }).catch(err => {
+                    console.error('error thrown: ', err);
+                    alert(err);
+                });
+            });
+        }
+
+        function buyLSVX(){
+            ScatterJS.login().then(id => {
+                if (!id) return console.error('no identity');
+                const account = ScatterJS.account('eos');
+                var transfer_amount_LSVX = document.getElementById('transfer_amount_LSVX').value;
+                transfer_amount_LSVX = format_precision4_amount(transfer_amount_LSVX) + " EOS";
+
+                api.transact({
+                    actions: [{
+                        account: 'eosio.token',
+                        name: 'transfer',
+                        authorization: //user paying for resources must go first
+                            [{
+
+                            actor: account.name,
+                            permission: account.authority,
+
+                        }],
+                        data: {
+                            //todo:pass in data object
+                            from: account.name,
+                            to: 'sharecorcoin',
+                            quantity: transfer_amount_LSVX,
+                            memo: 'LSVX'
+                        }
+                    }]
+
+                }, {
+                    blocksBehind: 3,
+                    expireSeconds: 30,
+                }).then(res => {
+                    console.log('sent tx: ', res);
+                    alert('You successfully exchanged ' + transfer_amount_LSVX + ' for LSVX');
+                }).catch(err => {
+                    console.error('error thrown: ', err);
+                    alert(err);
+                });
+            });
+        };
+
+        function sellLSVX(){
+            ScatterJS.login().then(id => {
+                if (!id) return console.error('no identity');
+                const account = ScatterJS.account('eos');
+                var transfer_amount_sov = document.getElementById('transfer_amount_LSVX').value;
+                transfer_amount_LSVX = format_precision4_amount(transfer_amount_LSVX) + " LSVX";
+
+                api.transact({
+                    actions: [{
+                        account: 'sharecorcoin',
+                        name: 'transfer',
+                        authorization: //user paying for resources must go first
+                            [{
+
+                            actor: account.name,
+                            permission: account.authority,
+
+                        }],
+                        data: {
+                            //todo:pass in data object
+                            from: account.name,
+                            to: 'sharecorcoin',
+                            quantity: transfer_amount_LSVX,
+                            memo: 'EOS'
+                        }
+                    }]
+
+                }, {
+                    blocksBehind: 3,
+                    expireSeconds: 30,
+                }).then(res => {
+                    console.log('sent tx: ', res);
+                    alert('You successfully exchanged ' + transfer_amount_LSVX + ' for EOS');
+                }).catch(err => {
+                    console.error('error thrown: ', err);
+                    alert(err);
+                });
+            });
+
+        };
+
+       
+
+        
+
+       
+     
+
+       
+    </script>
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    </div>
+  </body>
+</html>
+
